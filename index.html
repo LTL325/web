@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HDMS UTILS</title>
+    <meta name="theme-color" content="#000d00">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+        :root {
+            --green: #00ff41;
+            --green-dim: #00b32a;
+            --green-dark: #007a1e;
+            --green-ghost: rgba(0, 255, 65, 0.06);
+            --green-glow: rgba(0, 255, 65, 0.4);
+            --bg: #000d00;
+            --bg2: #001a05;
+            --red: #ff3b30;
+            --gold: #ffd700;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ── 매트릭스 배경 ── */
+        #matrixBg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+
+        /* ── 배경 스캔라인 오버레이 ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.08) 2px,
+                rgba(0,0,0,0.08) 4px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* ── 메인 레이아웃 ── */
+        .wrapper {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ── 헤더 ── */
+        header {
+            width: 100%;
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(0,255,65,0.15);
+            position: relative;
+        }
+
+        .site-title {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            color: var(--green);
+            text-shadow: 0 0 10px var(--green-glow), 0 0 30px rgba(0,255,65,0.2);
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            from { text-shadow: 0 0 8px var(--green-glow), 0 0 20px rgba(0,255,65,0.15); }
+            to   { text-shadow: 0 0 20px var(--green-glow), 0 0 50px rgba(0,255,65,0.3), 0 0 80px rgba(0,255,65,0.1); }
+        }
+
+        .site-sub {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--green-dark);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        /* ── 메인 카드 ── */
+        .card {
+            width: 100%;
+            max-width: 760px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem 3rem;
+        }
+
+        .section-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+            color: var(--green-dark);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── 입력 패널 ── */
+        .input-panel {
+            background: var(--green-ghost);
+            border: 1px solid rgba(0,255,65,0.2);
+            border-radius: 4px;
+            padding: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.2rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .input-field label {
+            font-size: 0.72rem;
+            letter-spacing: 0.2em;
+            color: var(--green-dim);
+            text-transform: uppercase;
+        }
+
+        .input-field input[type="number"],
+        .input-field select {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.1rem;
+            padding: 0.7rem 0.9rem;
+            background: rgba(0,0,0,0.6);
+            color: var(--green);
+            border: 1px solid rgba(0,255,65,0.35);
+            border-radius: 3px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+        }
+
+        .input-field input:focus,
+        .input-field select:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 12px rgba(0,255,65,0.2);
+        }
+
+        /* 정렬 & 중복 옵션 */
+        .options-row {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.82rem;
+            color: var(--green-dim);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-label input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--green-dark);
+            background: transparent;
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+            transition: 0.15s;
+            flex-shrink: 0;
+        }
+
+        .toggle-label input[type="checkbox"]:checked {
+            background: var(--green-dark);
+            border-color: var(--green);
+        }
+
+        .toggle-label input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: -1px; left: 1px;
+            font-size: 11px;
+            color: var(--green);
+        }
+
+        /* ── 버튼 영역 ── */
+        .btn-row {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            padding: 0.85rem 2rem;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.08);
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .btn:hover::after { opacity: 1; }
+        .btn:active { transform: translateY(1px); }
+
+        .btn-primary {
+            background: var(--green);
+            color: #000d00;
+            box-shadow: 0 0 20px rgba(0,255,65,0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 35px rgba(0,255,65,0.55);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--green-dim);
+            border: 1px solid rgba(0,255,65,0.25);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--green-dim);
+            color: var(--green);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: #ff6b6b;
+            border: 1px solid rgba(255,60,48,0.25);
+        }
+
+        .btn-danger:hover {
+            border-color: #ff6b6b;
+            background: rgba(255,60,48,0.08);
+        }
+
+        .btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        /* ── 결과 표시 영역 ── */
+        .result-area {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(0,255,65,0.18);
+            border-radius: 4px;
+            min-height: 180px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-area::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--green), transparent);
+            animation: scanline 3s ease-in-out infinite;
+        }
+
+        @keyframes scanline {
+            0%   { top: -5%; }
+            100% { top: 105%; }
+        }
+
+        .result-placeholder {
+            color: rgba(0,255,65,0.2);
+            font-size: 0.9rem;
+            letter-spacing: 0.3em;
+            text-align: center;
+        }
+
+        .numbers-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .num-chip {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1.4rem, 4vw, 2.4rem);
+            font-weight: 700;
+            padding: 0.5em 0.8em;
+            background: rgba(0,255,65,0.07);
+            border: 1px solid rgba(0,255,65,0.4);
+            border-radius: 4px;
+            opacity: 0;
+            transform: scale(0.5) translateY(10px);
+            filter: blur(8px);
+            transition: none;
+            text-align: center;
+            min-width: 2.5em;
+            position: relative;
+        }
+
+        .num-chip.revealed {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            filter: blur(0);
+            transition: opacity 0.35s, transform 0.35s cubic-bezier(0.23, 1.5, 0.4, 1), filter 0.35s;
+            text-shadow: 0 0 15px var(--green-glow), 0 0 30px rgba(0,255,65,0.3);
+        }
+
+        .num-chip.pop {
+            animation: pop 0.4s cubic-bezier(0.23, 1.5, 0.4, 1) forwards;
+        }
+
+        @keyframes pop {
+            0%   { transform: scale(0.4) translateY(15px); opacity: 0; filter: blur(12px); }
+            60%  { transform: scale(1.15) translateY(-3px); opacity: 1; filter: blur(0); }
+            100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
+        }
+
+        /* 진행 표시기 */
+        .draw-progress {
+            display: none;
+            font-size: 0.75rem;
+            letter-spacing: 0.3em;
+            color: var(--green-dark);
+            margin-top: 1rem;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* ── 통계 / 정보 바 ── */
+        .stat-bar {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            font-size: 0.75rem;
+            color: var(--green-dark);
+            letter-spacing: 0.1em;
+            padding: 0.6rem 0;
+            border-top: 1px solid rgba(0,255,65,0.1);
+            border-bottom: 1px solid rgba(0,255,65,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .stat-bar span { color: var(--green-dim); }
+
+        /* ── 기록 패널 ── */
+        .history-panel {
+            background: var(--green-ghost);
+            border: 1px solid rgba(0,255,65,0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.9rem 1.4rem;
+            background: rgba(0,255,65,0.04);
+            border-bottom: 1px solid rgba(0,255,65,0.1);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .history-header h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.3em;
+            font-weight: 400;
+            color: var(--green-dark);
+            text-transform: uppercase;
+        }
+
+        .history-toggle {
+            font-size: 0.8rem;
+            color: var(--green-dark);
+            transition: transform 0.2s;
+        }
+
+        .history-toggle.open { transform: rotate(180deg); }
+
+        .history-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+
+        .history-list.open {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .history-empty {
+            padding: 2rem;
+            text-align: center;
+            color: rgba(0,255,65,0.2);
+            font-size: 0.82rem;
+            letter-spacing: 0.2em;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 0.9rem 1.4rem;
+            border-bottom: 1px solid rgba(0,255,65,0.07);
+            font-size: 0.82rem;
+            transition: background 0.15s;
+        }
+
+        .history-item:hover { background: rgba(0,255,65,0.04); }
+
+        .history-item:last-child { border-bottom: none; }
+
+        .history-meta {
+            min-width: 110px;
+            color: var(--green-dark);
+            flex-shrink: 0;
+        }
+
+        .history-meta .time {
+            display: block;
+            font-size: 0.7rem;
+            opacity: 0.6;
+            margin-top: 0.2rem;
+        }
+
+        .history-nums {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .h-chip {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            padding: 0.2em 0.5em;
+            border: 1px solid rgba(0,255,65,0.3);
+            border-radius: 2px;
+            color: var(--green-dim);
+        }
+
+        .h-chip.highlight {
+            color: var(--gold);
+            border-color: rgba(255,215,0,0.4);
+        }
+
+        /* ── 푸터 ── */
+        footer {
+            margin-top: auto;
+            padding: 2rem;
+            text-align: center;
+            font-size: 0.72rem;
+            color: rgba(0,255,65,0.2);
+            letter-spacing: 0.2em;
+            border-top: 1px solid rgba(0,255,65,0.07);
+        }
+
+        /* ── 토스트 알림 ── */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--bg2);
+            border: 1px solid rgba(0,255,65,0.3);
+            color: var(--green);
+            font-size: 0.82rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 3px;
+            letter-spacing: 0.1em;
+            z-index: 999;
+            transition: transform 0.3s cubic-bezier(0.23, 1.5, 0.4, 1);
+            pointer-events: none;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.error { border-color: rgba(255,60,48,0.5); color: var(--red); }
+
+        /* ── 오류 흔들기 ── */
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20%      { transform: translateX(-6px); }
+            40%      { transform: translateX(6px); }
+            60%      { transform: translateX(-4px); }
+            80%      { transform: translateX(4px); }
+        }
+
+        .shake { animation: shake 0.35s ease; }
+
+        /* ── 반응형 ── */
+        @media (max-width: 600px) {
+            .input-row { grid-template-columns: 1fr 1fr; }
+            .input-row .input-field:last-child { grid-column: span 2; }
+            .btn-row { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; text-align: center; }
+            .stat-bar { gap: 1rem; }
+        }
+
+        /* 스크롤바 */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--green-dark); border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+<canvas id="matrixBg" aria-hidden="true"></canvas>
+
+<div class="wrapper">
+    <header>
+        <div class="site-title">HDMS UTILS</div>
+        <div class="site-sub">숫자 뽑기 &nbsp;Version:&nbsp; dev-2.0</div>
+    </header>
+
+    <main class="card">
+        <!-- ── 설정 패널 ── -->
+        <div class="section-label">CONFIGURATION</div>
+        <div class="input-panel">
+            <div class="input-row">
+                <div class="input-field">
+                    <label>시작 번호</label>
+                    <input type="number" id="startNum" value="1" min="0">
+                </div>
+                <div class="input-field">
+                    <label>끝 번호</label>
+                    <input type="number" id="endNum" value="100" min="1">
+                </div>
+                <div class="input-field">
+                    <label>뽑을 개수</label>
+                    <input type="number" id="countNum" value="5" min="1">
+                </div>
+            </div>
+            <div class="options-row">
+                <label class="toggle-label">
+                    <input type="checkbox" id="sortResult"> 오름차순 정렬
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="allowDuplicate"> 중복 허용
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="highlightFirst"> 첫 번째 강조
+                </label>
+            </div>
+        </div>
+
+        <!-- ── 버튼 ── -->
+        <div class="btn-row">
+            <button class="btn btn-primary" id="drawBtn" onclick="NumberDraw.draw()">▶ 뽑기 시작</button>
+            <button class="btn btn-secondary" id="redrawBtn" onclick="NumberDraw.redraw()" disabled>↺ 다시 뽑기</button>
+            <button class="btn btn-secondary" onclick="NumberDraw.copyResult()" id="copyBtn" disabled>⎘ 복사</button>
+            <button class="btn btn-danger" onclick="NumberDraw.clearHistory()">✕ 기록 삭제</button>
+        </div>
+
+        <!-- ── 결과 표시 ── -->
+        <div class="section-label">RESULT</div>
+        <div class="result-area" id="resultArea">
+            <div class="result-placeholder" id="placeholder">// 뽑기 버튼을 누르세요</div>
+            <div class="numbers-container" id="numbersContainer"></div>
+            <div class="draw-progress" id="drawProgress">DRAWING...</div>
+        </div>
+
+        <!-- ── 통계 바 ── */
+        <div class="stat-bar">
+            범위: <span id="statRange">1 ~ 100</span>
+            &nbsp;|&nbsp;
+            가능한 수: <span id="statTotal">100개</span>
+            &nbsp;|&nbsp;
+            총 뽑기 횟수: <span id="statDrawCount">0회</span>
+            &nbsp;|&nbsp;
+            마지막 뽑기: <span id="statLast">—</span>
+        </div>
+
+        <!-- ── 기록 패널 ── -->
+        <div class="history-panel">
+            <div class="history-header" onclick="toggleHistory()">
+                <h3>📋 뽑기 기록</h3>
+                <span class="history-toggle" id="historyToggle">▼</span>
+            </div>
+            <div class="history-list" id="historyList">
+                <div class="history-empty" id="historyEmpty">기록이 없습니다</div>
+            </div>
+        </div>
+    </main>
+
+    <footer>HDMS UTILS &nbsp;|&nbsp; Made by LTLantern &nbsp;|&nbsp; 2026</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  MATRIX BACKGROUND
+// ═══════════════════════════════════════════════
+(function() {
+    const canvas = document.getElementById('matrixBg');
+    const ctx = canvas.getContext('2d');
+    const chars = '0123456789ABCDEF@#$%';
+    const fs = 13;
+    let drops = [];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        drops = Array.from({ length: Math.floor(canvas.width / fs) }, () => Math.random() * -50);
+    }
+
+    function draw() {
+        ctx.fillStyle = 'rgba(0,13,0,0.04)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00b32a';
+        ctx.font = fs + 'px Share Tech Mono, monospace';
+        for (let i = 0; i < drops.length; i++) {
+            ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fs, drops[i] * fs);
+            if (drops[i] * fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+        }
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    setInterval(draw, 40);
+})();
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+function toast(msg, isError = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast' + (isError ? ' error' : '') + ' show';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════
+//  HISTORY TOGGLE
+// ═══════════════════════════════════════════════
+function toggleHistory() {
+    const list = document.getElementById('historyList');
+    const tog = document.getElementById('historyToggle');
+    list.classList.toggle('open');
+    tog.classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════
+//  NUMBER DRAW MODULE
+// ═══════════════════════════════════════════════
+const NumberDraw = (() => {
+    let history = [];
+    let lastResult = null;
+    let isDrawing = false;
+    let drawCount = 0;
+    let animTimers = [];
+
+    // 입력 실시간 → 통계 업데이트
+    ['startNum','endNum','countNum'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateStats);
+    });
+
+    function getInputs() {
+        const start = parseInt(document.getElementById('startNum').value);
+        const end   = parseInt(document.getElementById('endNum').value);
+        const count = parseInt(document.getElementById('countNum').value);
+        return { start, end, count };
+    }
+
+    function updateStats() {
+        const { start, end } = getInputs();
+        const allowDup = document.getElementById('allowDuplicate').checked;
+        const range = Math.max(0, end - start + 1);
+        document.getElementById('statRange').textContent = `${isNaN(start)?'?':start} ~ ${isNaN(end)?'?':end}`;
+        document.getElementById('statTotal').textContent = `${isNaN(range) ? '?' : (allowDup ? '∞' : range)}개`;
+        document.getElementById('statDrawCount').textContent = drawCount + '회';
+    }
+
+    function validate() {
+        const { start, end, count } = getInputs();
+        const allowDup = document.getElementById('allowDuplicate').checked;
+
+        if ([start, end, count].some(isNaN)) return '숫자를 올바르게 입력해주세요.';
+        if (start > end) return '시작 번호가 끝 번호보다 클 수 없습니다.';
+        if (count < 1) return '뽑을 개수는 1 이상이어야 합니다.';
+        if (!allowDup && count > end - start + 1) return '중복 없이 뽑을 수 있는 개수를 초과했습니다.';
+        return null;
+    }
+
+    function generateNumbers(start, end, count, allowDuplicate) {
+        if (allowDuplicate) {
+            return Array.from({ length: count }, () => Math.floor(Math.random() * (end - start + 1)) + start);
+        } else {
+            const pool = Array.from({ length: end - start + 1 }, (_, i) => i + start);
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            return pool.slice(0, count);
+        }
+    }
+
+    function draw() {
+        if (isDrawing) return;
+
+        const err = validate();
+        if (err) {
+            toast(err, true);
+            document.getElementById('resultArea').classList.add('shake');
+            setTimeout(() => document.getElementById('resultArea').classList.remove('shake'), 400);
+            return;
+        }
+
+        const { start, end, count } = getInputs();
+        const allowDup = document.getElementById('allowDuplicate').checked;
+        const doSort   = document.getElementById('sortResult').checked;
+        const highlight = document.getElementById('highlightFirst').checked;
+
+        let nums = generateNumbers(start, end, count, allowDup);
+        if (doSort) nums = [...nums].sort((a, b) => a - b);
+
+        startReveal(nums, highlight, { start, end, count, allowDup, sort: doSort });
+    }
+
+    function redraw() {
+        if (!lastResult || isDrawing) return;
+        const { params } = lastResult;
+        let nums = generateNumbers(params.start, params.end, params.count, params.allowDup);
+        if (params.sort) nums = [...nums].sort((a, b) => a - b);
+        const highlight = document.getElementById('highlightFirst').checked;
+        startReveal(nums, highlight, params);
+    }
+
+    function startReveal(nums, highlight, params) {
+        isDrawing = true;
+        animTimers.forEach(clearTimeout);
+        animTimers = [];
+
+        // UI 리셋
+        document.getElementById('placeholder').style.display = 'none';
+        document.getElementById('drawProgress').style.display = 'block';
+        document.getElementById('drawBtn').disabled = true;
+        document.getElementById('redrawBtn').disabled = true;
+        document.getElementById('copyBtn').disabled = true;
+
+        const container = document.getElementById('numbersContainer');
+        container.innerHTML = '';
+
+        const chips = nums.map((n, i) => {
+            const chip = document.createElement('div');
+            chip.className = 'num-chip' + (highlight && i === 0 ? ' highlight-first' : '');
+            chip.textContent = n;
+            if (highlight && i === 0) chip.style.color = 'var(--gold)';
+            container.appendChild(chip);
+            return chip;
+        });
+
+        const delay = nums.length === 1 ? 400 : Math.min(1200, Math.max(300, 3000 / nums.length));
+
+        chips.forEach((chip, i) => {
+            const t = setTimeout(() => {
+                chip.classList.add('pop');
+
+                // 마지막 숫자
+                if (i === chips.length - 1) {
+                    const t2 = setTimeout(() => {
+                        isDrawing = false;
+                        document.getElementById('drawProgress').style.display = 'none';
+                        document.getElementById('drawBtn').disabled = false;
+                        document.getElementById('redrawBtn').disabled = false;
+                        document.getElementById('copyBtn').disabled = false;
+                        lastResult = { nums, params };
+                        drawCount++;
+                        saveHistory(nums, params);
+                        updateStats();
+                        document.getElementById('statLast').textContent = new Date().toLocaleTimeString('ko-KR');
+                    }, 500);
+                    animTimers.push(t2);
+                }
+            }, i * delay);
+            animTimers.push(t);
+        });
+    }
+
+    function copyResult() {
+        if (!lastResult) return;
+        const text = lastResult.nums.join(', ');
+        navigator.clipboard.writeText(text).then(() => {
+            toast('클립보드에 복사되었습니다: ' + text);
+        }).catch(() => {
+            // 폴백
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            toast('복사: ' + text);
+        });
+    }
+
+    function saveHistory(nums, params) {
+        const entry = {
+            nums,
+            params,
+            time: new Date().toLocaleTimeString('ko-KR'),
+            id: Date.now()
+        };
+        history.unshift(entry);
+        if (history.length > 50) history.pop();
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const list = document.getElementById('historyList');
+        const empty = document.getElementById('historyEmpty');
+
+        if (history.length === 0) {
+            empty.style.display = 'block';
+            // 헤더 외의 항목 제거
+            list.querySelectorAll('.history-item').forEach(e => e.remove());
+            return;
+        }
+        empty.style.display = 'none';
+        list.querySelectorAll('.history-item').forEach(e => e.remove());
+
+        history.forEach((entry, idx) => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            const highlight = document.getElementById('highlightFirst').checked;
+
+            const meta = `<div class="history-meta">#${drawCount - idx}&nbsp;&nbsp;${entry.params.start}~${entry.params.end}<span class="time">${entry.time}</span></div>`;
+            const chips = entry.nums.map((n, i) =>
+                `<span class="h-chip${highlight && i===0 ? ' highlight' : ''}">${n}</span>`
+            ).join('');
+
+            item.innerHTML = meta + `<div class="history-nums">${chips}</div>`;
+            list.appendChild(item);
+        });
+    }
+
+    function clearHistory() {
+        history = [];
+        drawCount = 0;
+        lastResult = null;
+        renderHistory();
+        document.getElementById('redrawBtn').disabled = true;
+        document.getElementById('copyBtn').disabled = true;
+        document.getElementById('numbersContainer').innerHTML = '';
+        document.getElementById('placeholder').style.display = 'block';
+        document.getElementById('statDrawCount').textContent = '0회';
+        document.getElementById('statLast').textContent = '—';
+        toast('기록이 삭제되었습니다.');
+    }
+
+    // 초기화
+    updateStats();
+
+    return { draw, redraw, copyResult, clearHistory };
+})();
+</script>
+</body>
+</html>
